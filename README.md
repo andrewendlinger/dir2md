@@ -50,7 +50,3 @@ dir2md --split
 1. **Pack:** Run `dir2md --merge`.
 2. **Prompt:** Upload the bundle to ChatGPT/Claude: *"Refactor main.py. Return the updated SOURCE_CONTEXT_BUNDLE.md."*
 3. **Restore:** Save the AI's response and run `dir2md --split --file response.md`.
-
-```
-
-```
