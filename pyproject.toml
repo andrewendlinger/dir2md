@@ -19,3 +19,8 @@ build-backend = "hatchling.build"
 # It tells Python: "My code is inside 'src/dir2md', not just flat in the root."
 [tool.hatch.build.targets.wheel]
 packages = ["src/dir2md"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+]
