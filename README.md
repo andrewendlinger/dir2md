@@ -1,5 +1,7 @@
 [![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+![Tests](https://github.com/andrewendlinger/dir2md/actions/workflows/ci.yml/badge.svg)
+
 # dir2md
 
 **Flatten source code into a single Markdown context bundle for LLMs, then unpack it back into valid files.**
@@ -54,3 +56,4 @@ dir2md --split
 ```bash
 dir2md --split --file response.md
 ```
+
