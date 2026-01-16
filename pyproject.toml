@@ -15,8 +15,6 @@ dir2md = "dir2md.main:main"
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
-# --- THIS IS THE MISSING LINK ---
-# It tells Python: "My code is inside 'src/dir2md', not just flat in the root."
 [tool.hatch.build.targets.wheel]
 packages = ["src/dir2md"]
 
@@ -24,3 +22,9 @@ packages = ["src/dir2md"]
 dev = [
     "pytest>=9.0.2",
 ]
+
+[tool.bumpversion]
+# run `uvx bump-my-version bump patch` to bump version
+current_version = "0.1.0"
+commit = true
+tag = true
