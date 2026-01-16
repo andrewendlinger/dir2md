@@ -11,7 +11,7 @@ from rich.progress import (
 )
 from rich.table import Table
 
-from .constants import MERGED_FILENAME
+from .constants import AI_INSTRUCTIONS, MERGED_FILENAME
 
 console = Console()
 
@@ -43,7 +43,6 @@ def merge_files(directory="."):
     files = [f for f in files if f.name != MERGED_FILENAME and f.name != "main.py"]
 
     text_files = []
-    # Quick pre-scan for binary files (usually fast enough to not need a bar)
     for f in files:
         if not is_binary(f):
             text_files.append(f)
@@ -52,7 +51,7 @@ def merge_files(directory="."):
         console.print("[bold red]No text files found to merge![/bold red]")
         return
 
-    # 2. Process Files with a Transient Progress Bar
+    # 2. Process Files
     processed_files = []
     total_lines = 0
     total_tokens = 0
@@ -62,7 +61,7 @@ def merge_files(directory="."):
         TextColumn("[bold blue]{task.description}"),
         BarColumn(bar_width=None),
         TaskProgressColumn(),
-        transient=True,  # <--- The bar will vanish when done
+        transient=True,
     ) as progress:
         task = progress.add_task("Reading files...", total=len(text_files))
 
@@ -90,12 +89,28 @@ def merge_files(directory="."):
 
             progress.advance(task)
 
-    # 3. Write the Bundle
+    # 3. Calculate Column Widths for Pretty Markdown
+    # Start with the length of the headers
+    col1_w = len("File Name")
+    col2_w = len("Lines")
+    col3_w = len("Est. Tokens")
+
+    # Update widths based on maximum content length
+    for p in processed_files:
+        col1_w = max(col1_w, len(p["name"]))
+        col2_w = max(col2_w, len(f"{p['lines']:,}"))
+        col3_w = max(col3_w, len(f"~{p['tokens']:,}"))
+
+    # 4. Write the Bundle
     with open(MERGED_FILENAME, "w", encoding="utf-8") as outfile:
         outfile.write("\n")
         outfile.write("\n\n")
 
-        # --- Summary Header in MD ---
+        # --- Write the Prompt from Constants ---
+        outfile.write(AI_INSTRUCTIONS)
+        outfile.write("\n---\n\n")
+
+        # --- Summary Header ---
         outfile.write("# Context Bundle Summary\n")
         outfile.write(f"**Source Directory:** `{parent_folder_name}`\n\n")
         outfile.write(
@@ -104,13 +119,28 @@ def merge_files(directory="."):
             f"**Est. Tokens:** ~{total_tokens:,}\n\n"
         )
 
-        outfile.write("| File Name | Lines | Est. Tokens |\n")
-        outfile.write("| :--- | :--- | :--- |\n")
+        # Pretty Table Header
+        # We align left (<) and use the calculated widths
+        outfile.write(
+            f"| {'File Name':<{col1_w}} | {'Lines':<{col2_w}} | {'Est. Tokens':<{col3_w}} |\n"
+        )
+        # Markdown separator line must match the width or just be standard dashes.
+        # Standard markdown requires at least 3 dashes. We can match the width for visuals.
+        outfile.write(f"| {'-' * col1_w} | {'-' * col2_w} | {'-' * col3_w} |\n")
+
+        # Pretty Table Rows
         for p in processed_files:
-            outfile.write(f"| {p['name']} | {p['lines']:,} | ~{p['tokens']:,} |\n")
+            name_str = p["name"]
+            lines_str = f"{p['lines']:,}"
+            tokens_str = f"~{p['tokens']:,}"
+
+            outfile.write(
+                f"| {name_str:<{col1_w}} | {lines_str:<{col2_w}} | {tokens_str:<{col3_w}} |\n"
+            )
+
         outfile.write("\n")
 
-        # --- Content ---
+        # Content
         for p in processed_files:
             outfile.write(f"#### {p['name']}\n")
             lang_map = {
@@ -131,7 +161,7 @@ def merge_files(directory="."):
                 outfile.write("\n")
             outfile.write("```\n\n")
 
-    # 4. Final Clean Output (Grid inside Panel)
+    # 5. Final Console Output
     grid = Table.grid(padding=(0, 2))
     grid.add_column(style="bold white")
     grid.add_column(justify="right", style="cyan")
@@ -144,7 +174,7 @@ def merge_files(directory="."):
     console.print(
         Panel(
             grid,
-            title=f"[bold green]Created: {MERGED_FILENAME}[/bold green]",
+            title=f"[bold green]Context File Generated: {MERGED_FILENAME}[/bold green]",
             border_style="green",
             expand=False,
         )

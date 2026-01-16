@@ -24,7 +24,7 @@ dev = [
 ]
 
 [tool.bumpversion]
-# run `uvx bump-my-version bump patch` to bump version
+# run `uvx bump-my-version bump patch` to bump version (major, minor, patch)
 current_version = "0.1.1"
 commit = true
 tag = true
