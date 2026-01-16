@@ -1,7 +1,15 @@
 from pathlib import Path
 
 from rich.console import Console
-from rich.progress import track
+from rich.panel import Panel
+from rich.progress import (
+    BarColumn,
+    Progress,
+    SpinnerColumn,
+    TaskProgressColumn,
+    TextColumn,
+)
+from rich.table import Table
 
 from .constants import MERGED_FILENAME
 
@@ -21,10 +29,7 @@ def is_binary(file_path):
 
 
 def estimate_tokens(content):
-    """
-    Rough estimate of token count.
-    Rule of thumb: ~4 characters per token for code/English.
-    """
+    """Rough estimate: ~4 chars per token."""
     return len(content) // 4
 
 
@@ -33,14 +38,12 @@ def merge_files(directory="."):
     base_path = Path(directory)
     parent_folder_name = base_path.resolve().name
 
+    # 1. Gather files
     files = sorted([f for f in base_path.iterdir() if f.is_file()])
-
-    # Filter out the output file and main.py
     files = [f for f in files if f.name != MERGED_FILENAME and f.name != "main.py"]
 
     text_files = []
-
-    # Pre-scan for binary files
+    # Quick pre-scan for binary files (usually fast enough to not need a bar)
     for f in files:
         if not is_binary(f):
             text_files.append(f)
@@ -49,64 +52,67 @@ def merge_files(directory="."):
         console.print("[bold red]No text files found to merge![/bold red]")
         return
 
-    console.print(f"[bold blue]Processing {len(text_files)} files...[/bold blue]")
-
+    # 2. Process Files with a Transient Progress Bar
     processed_files = []
     total_lines = 0
     total_tokens = 0
 
-    # 1. Read files and calculate stats
-    for f in track(text_files, description="Reading files..."):
-        try:
-            content = f.read_text(encoding="utf-8", errors="replace")
+    with Progress(
+        SpinnerColumn(),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(bar_width=None),
+        TaskProgressColumn(),
+        transient=True,  # <--- The bar will vanish when done
+    ) as progress:
+        task = progress.add_task("Reading files...", total=len(text_files))
 
-            line_count = len(content.splitlines())
-            token_count = estimate_tokens(content)
+        for f in text_files:
+            try:
+                content = f.read_text(encoding="utf-8", errors="replace")
+                line_count = len(content.splitlines())
+                token_count = estimate_tokens(content)
 
-            # Update grand totals
-            total_lines += line_count
-            total_tokens += token_count
+                total_lines += line_count
+                total_tokens += token_count
 
-            processed_files.append(
-                {
-                    "path": f,
-                    "name": f.name,
-                    "lines": line_count,
-                    "tokens": token_count,
-                    "suffix": f.suffix.lower(),
-                    "content": content,
-                }
-            )
-        except Exception as e:
-            console.print(f"[red]Failed to read {f.name}: {e}[/red]")
+                processed_files.append(
+                    {
+                        "path": f,
+                        "name": f.name,
+                        "lines": line_count,
+                        "tokens": token_count,
+                        "suffix": f.suffix.lower(),
+                        "content": content,
+                    }
+                )
+            except Exception as e:
+                console.print(f"[red]Skipping {f.name}: {e}[/red]")
 
-    # 2. Write the Bundle
+            progress.advance(task)
+
+    # 3. Write the Bundle
     with open(MERGED_FILENAME, "w", encoding="utf-8") as outfile:
         outfile.write("\n")
         outfile.write("\n\n")
 
-        # --- SUMMARY SECTION ---
+        # --- Summary Header in MD ---
         outfile.write("# Context Bundle Summary\n")
         outfile.write(f"**Source Directory:** `{parent_folder_name}`\n\n")
+        outfile.write(
+            f"**Total Files:** {len(processed_files)} | "
+            f"**Total Lines:** {total_lines:,} | "
+            f"**Est. Tokens:** ~{total_tokens:,}\n\n"
+        )
 
-        # Grand Totals
-        outfile.write(f"**Total Files:** {len(processed_files)} | ")
-        outfile.write(f"**Total Lines:** {total_lines} | ")
-        outfile.write(f"**Est. Tokens:** ~{total_tokens}\n\n")
-
-        # Table
         outfile.write("| File Name | Lines | Est. Tokens |\n")
         outfile.write("| :--- | :--- | :--- |\n")
-
         for p in processed_files:
-            outfile.write(f"| {p['name']} | {p['lines']} | ~{p['tokens']} |\n")
-
+            outfile.write(f"| {p['name']} | {p['lines']:,} | ~{p['tokens']:,} |\n")
         outfile.write("\n")
 
-        # --- CONTENT SECTION ---
+        # --- Content ---
         for p in processed_files:
             outfile.write(f"#### {p['name']}\n")
-
             lang_map = {
                 ".ppg": "c",
                 ".c": "c",
@@ -125,8 +131,21 @@ def merge_files(directory="."):
                 outfile.write("\n")
             outfile.write("```\n\n")
 
+    # 4. Final Clean Output (Grid inside Panel)
+    grid = Table.grid(padding=(0, 2))
+    grid.add_column(style="bold white")
+    grid.add_column(justify="right", style="cyan")
+
+    grid.add_row("Source:", parent_folder_name)
+    grid.add_row("Files:", str(len(processed_files)))
+    grid.add_row("Lines:", f"{total_lines:,}")
+    grid.add_row("Tokens:", f"~{total_tokens:,}")
+
     console.print(
-        f"[bold green]Success![/bold green] Bundle created: [bold]{MERGED_FILENAME}[/bold]"
+        Panel(
+            grid,
+            title=f"[bold green]Created: {MERGED_FILENAME}[/bold green]",
+            border_style="green",
+            expand=False,
+        )
     )
-    console.print(f"  Lines: {total_lines}")
-    console.print(f"  Tokens: ~{total_tokens}")
