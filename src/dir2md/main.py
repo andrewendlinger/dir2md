@@ -1,4 +1,5 @@
 import argparse
+import sys
 
 from .constants import MERGED_FILENAME
 from .merge import merge_files
@@ -6,19 +7,64 @@ from .split import split_files
 
 
 def main():
+    description = """
+    Directory to Markdown Context Tool (dir2md)
+    -------------------------------------------
+    A developer tool to 'flatten' a source code directory into a single
+    Markdown file (context bundle) for use with LLMs, and 'explode'
+    it back into the original file structure.
+    """
+
+    epilog = f"""
+    examples:
+      dir2md --merge                    # Create {MERGED_FILENAME} from current dir
+      dir2md --split                    # Restore files from {MERGED_FILENAME}
+      dir2md --split --file context.md  # Restore from a specific file
+    """
+
     parser = argparse.ArgumentParser(
-        description="Directory to Markdown Context Tool (dir2md)"
+        description=description,
+        epilog=epilog,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        add_help=False,  # <--- 1. Disable default help so we can customize it
     )
-    parser.add_argument(
+
+    # Action Group
+    action_group = parser.add_mutually_exclusive_group(required=False)
+
+    action_group.add_argument(
         "--merge",
+        "-m",
         action="store_true",
-        help="Merge current directory into single markdown file",
+        help="Merge all source files in the current directory into a single Markdown bundle.",
     )
-    parser.add_argument(
-        "--split", action="store_true", help="Split bundle back into files"
+
+    action_group.add_argument(
+        "--split",
+        "-s",
+        action="store_true",
+        help="Split a Markdown bundle back into individual source files.",
     )
-    parser.add_argument(
-        "--file", type=str, default=MERGED_FILENAME, help="Specify bundle filename"
+
+    # Options Group
+    options_group = parser.add_argument_group("configuration")
+
+    # 2. Re-add help manually with Capitalized description
+    options_group.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        default=argparse.SUPPRESS,
+        help="Show this help message and exit.",
+    )
+
+    options_group.add_argument(
+        "--file",
+        "-f",
+        type=str,
+        default=MERGED_FILENAME,
+        metavar="FILENAME",
+        help=f"Specify the bundle filename (default: {MERGED_FILENAME})",
     )
 
     args = parser.parse_args()
@@ -29,6 +75,7 @@ def main():
         split_files(args.file)
     else:
         parser.print_help()
+        sys.exit(0)
 
 
 if __name__ == "__main__":
