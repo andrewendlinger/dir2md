@@ -1,4 +1,4 @@
 import re
 
-MERGED_FILENAME = "context_bundle.md"
+MERGED_FILENAME = "CONTEXT.md"
 HEADER_PATTERN = re.compile(r"^####\s+(.+)\s*$")

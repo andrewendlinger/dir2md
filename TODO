@@ -1,8 +1,5 @@
 FEATURES
-- make summary on top of merged file (containing list of file and each file length)
-- create a summary of:
-    - how many files where merged
-    - total number of lines, words, tokens
+
 
 TESTS
 - tests that assure merging und unmerging worked (--> probably use hashing for that?)
