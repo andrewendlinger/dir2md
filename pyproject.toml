@@ -1,12 +1,21 @@
 [project]
 name = "dir2md"
 version = "0.1.0"
-description = "Add your description here"
+description = "Convert directory context to markdown"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    "rich>=14.2.0",
+    "rich>=13.0.0",
 ]
 
 [project.scripts]
 dir2md = "dir2md.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# --- THIS IS THE MISSING LINK ---
+# It tells Python: "My code is inside 'src/dir2md', not just flat in the root."
+[tool.hatch.build.targets.wheel]
+packages = ["src/dir2md"]

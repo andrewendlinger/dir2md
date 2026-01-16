@@ -1,3 +1,84 @@
+
+
+
+# Context Bundle Summary
+**Source Directory:** `dir2md`
+
+**Total Files:** 6 | **Total Lines:** 98 | **Est. Tokens:** ~1006
+
+| File Name | Lines | Est. Tokens |
+| :--- | :--- | :--- |
+| .gitignore | 10 | ~27 |
+| .python-version | 1 | ~1 |
+| README.md | 0 | ~0 |
+| TODO | 9 | ~71 |
+| pyproject.toml | 21 | ~120 |
+| uv.lock | 57 | ~787 |
+
+#### .gitignore
+```
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+```
+
+#### .python-version
+```
+3.10
+```
+
+#### README.md
+```
+
+```
+
+#### TODO
+```
+FEATURES
+- make summary on top of merged file (containing list of file and each file length)
+- create a summary of:
+    - how many files where merged
+    - total number of lines, words, tokens
+
+TESTS
+- tests that assure merging und unmerging worked (--> probably use hashing for that?)
+
+```
+
+#### pyproject.toml
+```
+[project]
+name = "dir2md"
+version = "0.1.0"
+description = "Convert directory context to markdown"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "rich>=13.0.0",
+]
+
+[project.scripts]
+dir2md = "dir2md.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# --- THIS IS THE MISSING LINK ---
+# It tells Python: "My code is inside 'src/dir2md', not just flat in the root."
+[tool.hatch.build.targets.wheel]
+packages = ["src/dir2md"]
+```
+
+#### uv.lock
+```
 version = 1
 revision = 3
 requires-python = ">=3.10"
@@ -55,3 +136,5 @@ sdist = { url = "https://files.pythonhosted.org/packages/fb/d2/8920e102050a0de7b
 wheels = [
     { url = "https://files.pythonhosted.org/packages/25/7a/b0178788f8dc6cafce37a212c99565fa1fe7872c70c6c9c1e1a372d9d88f/rich-14.2.0-py3-none-any.whl", hash = "sha256:76bc51fe2e57d2b1be1f96c524b890b816e334ab4c1e45888799bfaab0021edd", size = 243393, upload-time = "2025-10-09T14:16:51.245Z" },
 ]
+```
+
